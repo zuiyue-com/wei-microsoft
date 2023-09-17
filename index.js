@@ -20,6 +20,12 @@ async function index() {
 
     await login(page);
 
+    // 点击 Software developer
+    // await click(page, '/html/body/div[2]/main[1]/section/div[2]');
+
+    // // 点击 Continue
+    // await click(page, '/html/body/div[2]/main[1]/section/div[3]/button');
+    await delay(600000);
 
     await browser.close();
 }
@@ -35,9 +41,7 @@ async function login(page) {
     // 如果 #mectrl_currentAccount_secondary 里面包含了uesrname，说明已经登录了
 
     let xpath = '//*[@id="mectrl_headerPicture"]';
-    await page.waitForXPath(xpath); 
-    let elements = await page.$x(xpath);
-    await elements[0].click();
+    await click(page, xpath);
 
     // 判断当前url是不是submit
     let url = await page.url();
@@ -47,44 +51,32 @@ async function login(page) {
     }
     
     // 帐号
-    xpath = '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div[1]/div[3]/div/div/div/div[2]/div[2]/div/input[1]';
-    await page.waitForXPath(xpath); 
-    elements = await page.$x(xpath);
-    await elements[0].click();
+    await click(page, '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div[1]/div[3]/div/div/div/div[2]/div[2]/div/input[1]');
     await page.keyboard.type(username);
 
     // 下一步
-    xpath = '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div[1]/div[3]/div/div/div/div[4]/div/div/div/div[2]/input';
-    await page.waitForXPath(xpath);
-    elements = await page.$x(xpath);
-    await elements[0].click();
+    await click(page, '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div[1]/div[3]/div/div/div/div[4]/div/div/div/div[2]/input');
 
     // 密码
-    xpath = '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[3]/div/div[2]/input'
-    await page.waitForXPath(xpath); 
-    elements = await page.$x(xpath);
-    await elements[0].click();
+    await click(page, '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[3]/div/div[2]/input');
     await page.keyboard.type(password);
 
     // 下一步
-    xpath = '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[4]/div[2]/div/div/div/div/input';
-    await page.waitForXPath(xpath); 
-    elements = await page.$x(xpath);
-    await elements[0].click();
+    await click(page, '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[4]/div[2]/div/div/div/div/input');
 
     // 不再显示此消息
-    xpath = '/html/body/div/form/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[3]/div[1]/div/label/input';
-    await page.waitForXPath(xpath); 
-    elements = await page.$x(xpath);
-    await elements[0].click();
+    await click(page, '/html/body/div/form/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[3]/div[1]/div/label/input');
     
     // 是
-    xpath = '/html/body/div/form/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[3]/div[2]/div/div/div[2]/input';
+    await click(page, '/html/body/div/form/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[3]/div[2]/div/div/div[2]/input');
+
+    await save_cookie(page);
+}
+
+async function click(page, xpath) {
     await page.waitForXPath(xpath); 
     elements = await page.$x(xpath);
     await elements[0].click();
-
-    await save_cookie(page);
 }
 
 async function load_cookie(page) {
