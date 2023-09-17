@@ -1,42 +1,12 @@
 const puppeteer = require('puppeteer');
-const fs = require('fs');
+const fs = require('fs').promises;
 const fswrite = require('fs/promises'); // replace this line
 
-function checkOpen() {
-    const nowTimestamp = Math.floor(Date.now() / 1000);
-    const contents = fs.readFileSync('../data/daemon', 'utf8').trim();
-    const fileTimestamp = Number(contents) + 180;
-    return nowTimestamp < fileTimestamp;
-}
-
-function delay(time) {
-    return new Promise(function(resolve) { 
-        setTimeout(resolve, time)
-    });
-}
-
-async function login() {
-    if (!checkOpen()) {
-        console.log("暂时没有开启,继续等待下一次运行.");
-        await delay(1000);
-        return;
-    }
-
-    let entries = fs.readdirSync("../cookie");
-    if (entries.length >= 3) {
-        console.log("cookie entries.count() >= 3");
-        await delay(1000);
-        return;
-    }
-
-    let data = fs.readFileSync('../data/userinfo', 'utf8');
-    let info = JSON.parse(data);
-    console.log(`user: ${info.user}, pass: ${info.pass}`);
-
+async function index() {
     console.log("Browser new tab()");
     const browser = await puppeteer.launch({
-        //headless: false, 
-        headless: 'new',
+        headless: false, 
+        //headless: 'new',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -44,65 +14,97 @@ async function login() {
         ]
     });
     const page = await browser.newPage();
+    await load_cookie(page);
 
-    console.log("login page");
-    await page.goto('https://sgmsupply.login.covisint.com/login.do?host=https://sgmsupply.portal.covisint.com&ct_orig_uri=%2F');
-    await page.click('input[name="user"]');
-    await page.keyboard.type(info.user.trim());
-    await page.click('input[name="password"]');
-    await page.keyboard.type(info.pass.trim());
+    await page.goto("https://www.microsoft.com/en-us/wdsi/filesubmission", {timeout: 120*1000})
 
-    const xpathExpression = '/html/body/section/div/div/form/div[3]/div/img';
-    const elements = await page.$x(xpathExpression);
-    const png_data = await elements[0].screenshot({type: 'png'});
-    
-    await fswrite.writeFile('../tmp/screenshot.png', png_data);
+    await login(page);
 
-    let verifycode = await ttshitu('../tmp/screenshot.png');
-
-    console.log("verify code: " + verifycode);
-
-    await page.click('input[name="vrfycode"]');
-    await page.keyboard.type(verifycode);
-    await page.keyboard.press('Enter');
-    await page.waitForNavigation();
-
-    let body_text = await page.$eval('body', body => body.innerText);
-
-    if (!body_text.includes("我的应用")) {
-        console.log(body_text);
-        console.log("登录失败,没有包含\"我的应用\".继续重试");
-        await browser.close();
-        return;
-    }
-
-    console.log("idp page");
-    await page.goto('https://sgmsupply.broker.covisint.com/fed/app/idp.saml20?entityID=https://sp.saic-gm.com/spsaml/newgpsc&TARGET=https://sgmsupply.broker.covisint.com/fed/app/idp.saml20?entityID=https://sp.saic-gm.com/spsaml/newgpsc&spIntTest=true&TARGET=https%3A%2F%2Fsgmsupply.broker.covisint.com%2Fadmin%2Fapp%2FintVerification.do%3FproviderID%3D13039119%26providerType%3Dsp');
-    await page.waitForNavigation();
-    await delay(5000);
-
-    await page.screenshot({path: '../tmp/screenshot1.png'});
-
-    body_text = await page.$eval('body', body => body.innerText);
-    if (!body_text.includes("RFQ编号")) {
-        console.log(body_text);
-        console.log("登录失败,没有包含\"RFQ编号\".继续重试");
-        await browser.close();
-        return;
-    }
-
-    const cookies = await page.cookies();
-    let cookies_str = cookies.map(cookie => `${cookie.name}=${cookie.value}`).join(';');
-
-    let file_name = `../cookie/${Date.now()}`;
-    fs.writeFileSync(file_name, cookies_str);
-    console.log("登录成功!");
 
     await browser.close();
 }
 
-async function index() {
+index();
 
+async function login(page) {
+    require('dotenv').config()
+    const username = process.env.EMAIL
+    const password = process.env.PASSWORD
+    console.log(`Username: ${username}, Password: ${password}`)
+
+    // 如果 #mectrl_currentAccount_secondary 里面包含了uesrname，说明已经登录了
+    let username_html = "";
+    try {
+        const username_html = await page.$eval('#mectrl_currentAccount_secondary', el => el.innerText);
+    } catch(_) {}
+    
+    if (!username_html.includes(username)) {
+        console.log("没有登录，准备登录");
+
+        let xpath = '//*[@id="mectrl_headerPicture"]';
+        await page.waitForXPath(xpath); 
+        let elements = await page.$x('//*[@id="mectrl_headerPicture"]');
+        await elements[0].click();
+        
+        // 帐号
+        xpath = '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div[1]/div[3]/div/div/div/div[2]/div[2]/div/input[1]';
+        await page.waitForXPath(xpath); 
+        elements = await page.$x(xpath);
+        await elements[0].click();
+        await page.keyboard.type(username);
+
+        // 下一步
+        xpath = '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div[1]/div[3]/div/div/div/div[4]/div/div/div/div[2]/input';
+        await page.waitForXPath(xpath);
+        elements = await page.$x(xpath);
+        await elements[0].click();
+
+        // 密码
+        xpath = '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[3]/div/div[2]/input'
+        await page.waitForXPath(xpath); 
+        elements = await page.$x(xpath);
+        await elements[0].click();
+        await page.keyboard.type(password);
+
+        // 下一步
+        xpath = '/html/body/div/form[1]/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[4]/div[2]/div/div/div/div/input';
+        await page.waitForXPath(xpath); 
+        elements = await page.$x(xpath);
+        await elements[0].click();
+
+        // 不再显示此消息
+        xpath = '/html/body/div/form/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[3]/div[1]/div/label/input';
+        await page.waitForXPath(xpath); 
+        elements = await page.$x(xpath);
+        await elements[0].click();
+        
+        // 是
+        xpath = '/html/body/div/form/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[3]/div[2]/div/div/div[2]/input';
+        await page.waitForXPath(xpath); 
+        elements = await page.$x(xpath);
+        await elements[0].click();
+
+        await save_cookie(page);
+    }
 }
 
-index();
+async function load_cookie(page) {
+    try {
+        const cookiesString = await fs.readFile('./cookies.json');
+        const cookies = JSON.parse(cookiesString);
+        await page.setCookie(...cookies);
+    } catch (_) {}
+}
+
+async function save_cookie(page) {
+    // 获取 cookies
+    const cookies = await page.cookies();
+    // 将 cookies 保存到文件
+    await fs.writeFile('./cookies.json', JSON.stringify(cookies, null, 2));
+}
+
+function delay(time) {
+    return new Promise(function(resolve) { 
+        setTimeout(resolve, time)
+    });
+}
