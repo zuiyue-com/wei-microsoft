@@ -5,16 +5,17 @@ const fswrite = require('fs/promises'); // replace this line
 async function index() {
     console.log("Browser new tab()");
     const browser = await puppeteer.launch({
-        headless: false, 
-        //headless: 'new',
+        headless: false, // headless: 'new',
+        defaultViewport: null,
+        userDataDir: './cache',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage'
         ]
     });
-    const page = await browser.newPage();
-    await load_cookie(page);
+    const pages = await browser.pages();
+    const page = pages[0];
 
     await page.goto("https://www.microsoft.com/en-us/wdsi/filesubmission", {timeout: 120*1000})
 
@@ -43,9 +44,9 @@ async function login(page) {
     let xpath = '//*[@id="mectrl_headerPicture"]';
     await click(page, xpath);
 
-    // 判断当前url是不是submit
+    await page.waitForNavigation();
     let url = await page.url();
-    if (url.includes("filesubmission")) {
+    if (!url.includes("login.microsoftonline.com")) {
         console.log("已经登录，不需要再登录");
         return;
     }
@@ -70,7 +71,6 @@ async function login(page) {
     // 是
     await click(page, '/html/body/div/form/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[3]/div[2]/div/div/div[2]/input');
 
-    await save_cookie(page);
 }
 
 async function click(page, xpath) {
