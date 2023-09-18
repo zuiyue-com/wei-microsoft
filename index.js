@@ -43,13 +43,12 @@ async function index() {
                 continue;
             }
 
-            console.log(`filesubmission: ${file_path}`);
+            console.log(`上报文件: ${file_path}`);
 
-            // await filesubmission(page, file_path);
-
-            // let page = await browser.newPage();
-            // await page.setUserAgent(agent);
-            // await page.goto(submitUrl, {timeout: 120*1000})
+            await filesubmission(page, file_path);
+            page = await browser.newPage();
+            await page.setUserAgent(agent);
+            await page.goto(submitUrl, {timeout: 120*1000})
         }
     }
 
@@ -127,7 +126,7 @@ async function login(page) {
         elements = await page.$x(xpath);
         let text = await page.evaluate(element => element.textContent, elements[0]);
         if (text.includes(username)) {
-            console.log("已经登录，不需要再登录");
+            console.log("已经登录，准备提交文件");
             return;
         }
     } catch {}
