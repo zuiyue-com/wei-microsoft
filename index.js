@@ -1,6 +1,15 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs').promises;
-const fswrite = require('fs/promises'); // replace this line
+const fs1 = require('fs');
+const YAML = require('yaml');
+const { parse } = require('path');
+
+const fileContents = fs1.readFileSync('../wei-updater/build.dat','utf8');
+const submitFile = YAML.parse(fileContents);
+
+const args = process.argv.slice(2);
+let jumpArgs = typeof args[0] !== 'undefined' ? args[0] : "0" ;
+jumpArgs = parseInt(jumpArgs);
 
 async function index() {
     console.log("Browser new tab()");
@@ -14,15 +23,35 @@ async function index() {
             '--disable-dev-shm-usage'
         ]
     });
-    const pages = await browser.pages();
-    const page = pages[0];
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36');
+    let page = await browser.newPage();
+    const agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36';
+    await page.setUserAgent(agent);
 
-    await page.goto("https://www.microsoft.com/en-us/wdsi/filesubmission", {timeout: 120*1000})
+    let submitUrl = "https://www.microsoft.com/en-us/wdsi/filesubmission";
+
+    await page.goto(submitUrl, {timeout: 120*1000})
 
     await login(page);
 
-    await filesubmission(page, '../wei-release/windows/latest/data/wei-qbittorrent.exe');
+    let i = 0;
+    for (const key in submitFile) {
+        if (submitFile.hasOwnProperty(key)) {
+            const value = submitFile[key];
+            let file_path = `../wei-release/windows/latest${value}.exe`;
+            
+            if (i++ < jumpArgs) {
+                continue;
+            }
+
+            console.log(`filesubmission: ${file_path}`);
+
+            // await filesubmission(page, file_path);
+
+            // let page = await browser.newPage();
+            // await page.setUserAgent(agent);
+            // await page.goto(submitUrl, {timeout: 120*1000})
+        }
+    }
 
     await delay(600000);
 
@@ -78,9 +107,6 @@ async function filesubmission(page, file_path) {
     await click(page, '/html/body/div[2]/main[4]/section[2]/div/div/button[2]');
 
     await page.waitForNavigation({ timeout: 120*1000 });
-
-    await page.goto("https://www.microsoft.com/en-us/wdsi/filesubmission", {timeout: 120*1000});
-    await page.waitForNavigation();
 }
 
 async function login(page) {
@@ -111,7 +137,7 @@ async function login(page) {
         await page.waitForNavigation();
     } catch {}
     
-    await delay(3000);
+    await delay(5000);
     let url = await page.url();
     if (!url.includes("login.microsoftonline.com")) {
         console.log("已经登录，不需要再登录");
@@ -137,7 +163,6 @@ async function login(page) {
     
     // 是
     await click(page, '/html/body/div/form/div/div/div[2]/div[1]/div/div/div/div/div/div[3]/div/div[2]/div/div[3]/div[2]/div/div/div[2]/input');
-
 }
 
 async function click(page, xpath) {
