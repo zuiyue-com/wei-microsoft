@@ -4,6 +4,8 @@ Microsoft antivirus audit fully automatic upload
 
 # 功能
 
+- 新版页面提交：https://security.microsoft.com/
+
 - [x] 加载cookie
 - [x] if 确认是否登录
     - [x] 未登录加载本地帐号和密码
