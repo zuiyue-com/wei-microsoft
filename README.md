@@ -5,14 +5,14 @@ Microsoft antivirus audit fully automatic upload
 # 功能
 
 - 新版页面提交：https://security.microsoft.com/
-- [ ] 访问页面：https://security.microsoft.com/
-- [ ] 点击操作和提交
-- [ ] 点击提交按钮
-- [ ] 加载提交列表 ../wei-updater/build.dat
-- [ ] for 循环提交列表文件
-    - [ ] Add new submission
-    - [ ] 上传文件
-    - [ ] 提交
+- [x] 访问页面：https://security.microsoft.com/
+- [x] 点击操作和提交
+- [x] 点击提交按钮
+- [x] 加载提交列表 ../wei-updater/build.dat
+- [x] for 循环提交列表文件
+    - [x] Add new submission
+    - [x] 上传文件
+    - [x] 提交
 
 
 
