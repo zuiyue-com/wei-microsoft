@@ -4,7 +4,7 @@ const fs1 = require('fs');
 const YAML = require('yaml');
 const { parse } = require('path');
 
-const fileContents = fs1.readFileSync('../wei-updater/build.dat','utf8');
+const fileContents = fs1.readFileSync('../wei-build/data/wei/windows/build.dat','utf8');
 const submitFile = YAML.parse(fileContents);
 
 const args = process.argv.slice(2);
@@ -36,9 +36,9 @@ async function index() {
     for (const key in submitFile) {
         if (submitFile.hasOwnProperty(key)) {
             const value = submitFile[key];
-            let file_path = `../wei-release/windows/latest${value}.exe`;
+            let file_path = `../wei-release/wei/windows/latest/${value}.exe`;
             
-            if (i++ < jumpArgs) {
+            if (i++ < jumpArgs || i < jumpArgs + 3) {
                 continue;
             }
 
@@ -47,6 +47,8 @@ async function index() {
         }
     }
 
+    console.log("文件 id 为 " + i);
+    console.log("每天程序上传只允许3个，下一次请输入yarn start " + i);
     await delay(600000);
 
     await browser.close();
@@ -68,10 +70,9 @@ async function filesubmission(page, file_path) {
     await inputElementHandles[0].uploadFile(file_path);
 
     // // Choose the priority
-    await click_text(page, 'Medium - standard submission');
+    await click_text(page, 'High - need immediate attention (3 allowed per org per day)');
     
     await delay(1000);
-
     
     await page.evaluate(() => {
         [...document.querySelectorAll('.ms-Button span')].find(

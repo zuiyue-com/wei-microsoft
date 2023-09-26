@@ -14,8 +14,6 @@ Microsoft antivirus audit fully automatic upload
     - [x] 上传文件
     - [x] 提交
 
-
-
 - 旧版页面提交：https://www.microsoft.com/en-us/wdsi/filesubmission
 - [x] 加载cookie
 - [x] if 确认是否登录
